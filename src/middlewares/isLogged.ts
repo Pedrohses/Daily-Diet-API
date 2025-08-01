@@ -6,9 +6,7 @@ export async function isLogged(request: FastifyRequest, reply: FastifyReply) {
   
   const userId = await db('Users').select('id').where('sessionId', sessionId).first()
         
-  if(!userId) {
-    return reply.status(401).send({ error: 'Login required' })
-  }
+  if(!userId) return reply.status(401).send({ error: 'Login required' })
 
   return
 }
