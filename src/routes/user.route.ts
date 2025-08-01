@@ -2,10 +2,9 @@ import { FastifyInstance, FastifyServerOptions } from "fastify";
 import { db } from "../database";
 import { randomUUID } from "node:crypto";
 import z from "zod";
-import { request } from "node:http";
 
 async function userRoutes(fastify: FastifyInstance, options: FastifyServerOptions) {
-  fastify.post('/create', async (request, response) => {
+  fastify.post('/', async (request, reply) => {
     const createUserSchema = z.object({
       name: z.string(),
       email: z.string()
@@ -21,31 +20,31 @@ async function userRoutes(fastify: FastifyInstance, options: FastifyServerOption
       email,
     }).into('Users')
 
-    response.setCookie('sessionId', sessionId, { path: '/' })
+    reply.setCookie('sessionId', sessionId, { path: '/' })
 
-    return response.status(201).send()
+    return reply.status(201).send()
   })
 
-  fastify.delete('/delete', async (request, response) => {
+  // Rotas que não fazem parte da aplicação, servem apenas para desenvolvimento.
+
+  fastify.delete('/:id', async (request, reply) => {
     const deleteUserSchema = z.object({
       id: z.string(),
-      sessionId: z.string()
     })
 
-    const { id, sessionId } = deleteUserSchema.parse(request.body)
+    const { id } = deleteUserSchema.parse(request.params)
 
     await db('Users')
       .delete()
       .where('id', id)
-      .andWhere('sessionId', sessionId)
 
-    return response.status(204).send()
+    return reply.status(204).send()
   })
 
-  fastify.get('/', async (request, response) => {
+  fastify.get('/', async (request, reply) => {
     const result = await db('Users').select('*')
 
-    return response.status(200).send(result)
+    return reply.status(200).send(result)
   })
 }
 
