@@ -2,7 +2,6 @@
   "name": "daily-diet-api",
   "version": "1.0.0",
   "main": "index.js",
-  "type": "module",
   "node": "22",
   "scripts": {
     "dev": "npx tsx watch src/server.ts",
