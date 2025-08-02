@@ -12,7 +12,7 @@ export async function up(knex: Knex): Promise<void> {
     })
     .createTable('meals', function (table) {
       table.uuid('id').primary()
-      table.string('userId').notNullable().references('id').inTable('users')
+      table.uuid('userId').notNullable().references('id').inTable('users')
       table.string('name').notNullable()
       table.string('description').notNullable()
       table.boolean('isDietMeal').defaultTo(false)
