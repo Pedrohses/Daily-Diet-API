@@ -4,14 +4,14 @@ import { Knex } from 'knex'
 
 declare module 'knex/types/tables' {
   export interface Tables {
-    Users: {
+    users: {
       id: UUID,
       sessionId: string,
       name: string,
       email: string,
       created_at: Date
     },
-    Meals: {
+    meals: {
       id: UUID,
       userId: UUID,
       name: string,

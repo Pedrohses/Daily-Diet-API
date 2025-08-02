@@ -18,7 +18,7 @@ async function userRoutes(fastify: FastifyInstance, options: FastifyServerOption
       sessionId,
       name,
       email,
-    }).into('Users')
+    }).into('users')
 
     reply.setCookie('sessionId', sessionId, { path: '/' })
 

@@ -21,7 +21,7 @@ async function dietRoutes(fastify: FastifyInstance, options: FastifyServerOption
       const { name, description, isDietMeal } = createUserSchema.parse(request.body)
       const sessionId = request.cookies.sessionId
 
-      const userId = await db('Users').select('id').where('sessionId', sessionId).first()
+      const userId = await db('users').select('id').where('sessionId', sessionId).first()
   
       await db.insert({
         id: randomUUID(),
@@ -29,7 +29,7 @@ async function dietRoutes(fastify: FastifyInstance, options: FastifyServerOption
         name,
         description,
         isDietMeal
-      }).into('Meals')
+      }).into('meals')
   
       return response.status(201).send()
     }
@@ -50,11 +50,11 @@ async function dietRoutes(fastify: FastifyInstance, options: FastifyServerOption
 
       const data = editMealSchema.parse(request.body)
   
-      await db('Meals')
+      await db('meals')
         .update(data)
         .where('id', id)
   
-      return response.status(200).send()
+      return response.status(204).send()
     }
   );
 
@@ -66,7 +66,7 @@ async function dietRoutes(fastify: FastifyInstance, options: FastifyServerOption
       const deleteMealSchema = z.object({ id: z.string() })
       const { id } = deleteMealSchema.parse(request.params)
   
-      await db('Meals')
+      await db('meals')
         .delete()
         .where('id', id)
   
@@ -80,12 +80,12 @@ async function dietRoutes(fastify: FastifyInstance, options: FastifyServerOption
     }, 
     async (request, response) => {
       const sessionId = request.cookies.sessionId
-      const userId = await db('Users')
+      const userId = await db('users')
         .select('id')
         .where('sessionId', sessionId)
         .first()
 
-      const data = await db('Meals')
+      const data = await db('meals')
         .select()
         .where('userId', userId!.id)
 
@@ -101,7 +101,7 @@ async function dietRoutes(fastify: FastifyInstance, options: FastifyServerOption
       const getMealSchema = z.object({ id: z.string() })
       const { id } = getMealSchema.parse(request.params)
   
-      const data = await db('Meals')
+      const data = await db('meals')
         .select('*')
         .where('id', id)
         .first()
@@ -110,20 +110,23 @@ async function dietRoutes(fastify: FastifyInstance, options: FastifyServerOption
     }
   )
 
-  fastify.get('/metrics/:userId',
+  fastify.get('/metrics',
     {
       preHandler: [isLogged]
     },
     async (request, response) => {
-      const getMealSchema = z.object({ userId: z.string() })
-      const { userId } = getMealSchema.parse(request.params)
-  
-      const queryResult = await db('Meals')
+      const { sessionId } = request.cookies
+
+      const userId = await db('users')
+        .select('id')
+        .where('sessionId', sessionId)
+
+      const queryResult = await db('meals')
         .select()
-        .where('userId', userId)
+        .where('userId', userId[0].id)
 
       const totalMealsArray: Array<Meal> = []
-      const totalMealsInDietResultArray: Array<Meal> = []
+      const totalMealsOnDietResultArray: Array<Meal> = []
       const totalMealsOffDietResultArray: Array<Meal> = []
       let bestDietSequence: number = 0
       let currentSequence: number = 0
@@ -132,7 +135,7 @@ async function dietRoutes(fastify: FastifyInstance, options: FastifyServerOption
         totalMealsArray.push(data)
         
         if(data.isDietMeal) {
-          totalMealsOffDietResultArray.push(data)
+          totalMealsOnDietResultArray.push(data)
           
           currentSequence += 1
           if (currentSequence > bestDietSequence) {
@@ -143,13 +146,13 @@ async function dietRoutes(fastify: FastifyInstance, options: FastifyServerOption
         }
         
         if(!data.isDietMeal) {
-          totalMealsInDietResultArray.push(data)
+          totalMealsOffDietResultArray.push(data)
         }
       })
       
       const metrics = {
         totalMeals: totalMealsArray.length,
-        totalMealsInDiet: totalMealsInDietResultArray.length,
+        totalMealsOnDiet: totalMealsOnDietResultArray.length,
         totalMealsOffDiet: totalMealsOffDietResultArray.length,
         bestDietSequence
       }
